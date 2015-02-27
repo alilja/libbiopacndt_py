@@ -1,8 +1,8 @@
-import socket
-import errno
-from struct import unpack_from
 import logging
+import socket
 from json import loads
+
+from sock_threads.sock_threads import SockThread
 
 channels = [("A1", 2000), ("A3", 2000)]
 
@@ -23,7 +23,8 @@ class Client(object):
         self.server = server
         self.port = port
         self.channels = []
-        self.sockets = []
+        self.sockets = {}
+        self.channel_names = channel_names
 
         # get a list of the available channels
         probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -43,27 +44,46 @@ class Client(object):
 
         # make a friendlier dict
         available_channels = loads(data)
-        available_names = {}
+        self.available_names = {}
         for channel in available_channels['channels']:
-            available_names[channel['index']] = channel['sample_rate']
+            self.available_names[channel['index']] = channel['sample_rate']
 
+    def connect(self):
         # create sockets
-        for name in channel_names:
-            if name in available_names.keys():
-                channel = Channel(name, available_names[name])
+        for name in self.channel_names:
+            if name in self.available_names.keys():
+                channel = Channel(name, self.available_names[name])
                 self.channels.append(channel)
 
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.connect((server, port))
-                sock.send(str(channel) + "\n")
-                self.sockets.append(sock)
+                sock_thread = SockThread(channel, (self.server, self.port))
+                sock_thread.setDaemon(True)
+                sock_thread.start()
+                self.sockets[name] = sock_thread
 
                 logging.info("Created channel {0}.".format(channel))
             else:
                 logging.warning("Could not find channel \"{0}\" in manifest.".format(name))
 
+    def poll(self, channel, num=None):
+        data = self.sockets[channel].poll()
+        i = 0
+        if num is None:
+            while data:
+                yield data.pop()
+        else:
+            while i < num:
+                if not data:
+                    raise StopIteration()
+                yield data.pop()
+                i += 1
 
-client = Client(["A3"])
+
+client = Client(["A1", "A15"])
+client.connect()
+import time
+time.sleep(1)
+for data in client.poll("A1",10):
+    print data
 
 """
 sockets = []
