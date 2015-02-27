@@ -24,6 +24,7 @@ class Client(object):
         self.port = port
         self.channels = []
         self.sockets = {}
+        self.buffer = {}
         self.channel_names = channel_names
 
         # get a list of the available channels
@@ -59,22 +60,23 @@ class Client(object):
                 sock_thread.setDaemon(True)
                 sock_thread.start()
                 self.sockets[name] = sock_thread
+                self.buffer[name] = []
 
                 logging.info("Created channel {0}.".format(channel))
             else:
                 logging.warning("Could not find channel \"{0}\" in manifest.".format(name))
 
     def poll(self, channel, num=None):
-        data = self.sockets[channel].poll()
+        self.buffer[channel].extend(self.sockets[channel].poll())
         i = 0
         if num is None:
-            while data:
-                yield data.pop()
+            while self.buffer[channel]:
+                yield self.buffer[channel].pop(0)
         else:
             while i < num:
-                if not data:
+                if not self.buffer[channel]:
                     raise StopIteration()
-                yield data.pop()
+                yield self.buffer[channel].pop(0)
                 i += 1
 
 
@@ -82,20 +84,5 @@ client = Client(["A1", "A15"])
 client.connect()
 import time
 time.sleep(1)
-for data in client.poll("A1",10):
+for data in client.poll("A15", 10):
     print data
-
-"""
-sockets = []
-for channel in channels:
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect(('localhost', 9999))
-    sockets.append(sock)
-    sock.send(channel + "\n")
-
-while True:
-    for sock in sockets:
-        buffer = sock.recv(1024)
-        data = unpack_from("!d", buffer)
-        print data[0]
-"""
