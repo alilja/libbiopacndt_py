@@ -13,7 +13,6 @@ class SockThread(threading.Thread):
 
         self.alive = threading.Event()
         self.alive.set()
-        self.quit = False
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
@@ -22,17 +21,18 @@ class SockThread(threading.Thread):
             if error.errno != errno.ECONNREFUSED:
                 raise error
             else:
-                print("Error connecting to {0} on port {1}.".format(server, port))
+                print("Error connecting to {0} on port {1}.".format(connection_info[0], connection_info[1]))
         self.sock.send(str(channel) + "\n")
 
     def run(self):
         while self.alive.isSet():
-            if not self.quit:
-                data = unpack_from("!d", self.sock.recv(1024))
-                self.buffer.append(data[0])
-            else:
-                self.sock.close()
-                break
+            data = unpack_from("!d", self.sock.recv(32))
+            self.buffer.append(data[0])
+
+    def join(self, timeout=None):
+        self.sock.close()
+        self.alive.clear()
+        threading.Thread.join(self, timeout)
 
     def poll(self):
         data = self.buffer

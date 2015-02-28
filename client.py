@@ -1,5 +1,6 @@
 import logging
 import socket
+import errno
 from json import loads
 
 from sock_threads.sock_threads import SockThread
@@ -66,6 +67,16 @@ class Client(object):
             else:
                 logging.warning("Could not find channel \"{0}\" in manifest.".format(name))
 
+    def disconnect(self):
+        for sock_name, sock_thread in self.sockets:
+            sock_thread.join()
+
+    def __enter__(self):
+        self.connect()
+
+    def __exit__(self, *args):
+        self.disconnect()
+
     def poll(self, channel, num=None):
         self.buffer[channel].extend(self.sockets[channel].poll())
         i = 0
@@ -80,9 +91,8 @@ class Client(object):
                 i += 1
 
 
-client = Client(["A1", "A15"])
-client.connect()
 import time
-time.sleep(1)
-for data in client.poll("A15", 10):
-    print data
+with Client(["A1", "A15"]) as client:
+    time.sleep(1)
+    for data in client.poll("A15", 10):
+        print data
