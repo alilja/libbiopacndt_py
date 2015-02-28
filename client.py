@@ -3,9 +3,7 @@ import socket
 import errno
 from json import loads
 
-from sock_threads.sock_threads import SockThread
-
-channels = [("A1", 2000), ("A3", 2000)]
+from sock_thread.sock_thread import SockThread
 
 
 class Channel(object):
@@ -77,22 +75,17 @@ class Client(object):
     def __exit__(self, *args):
         self.disconnect()
 
-    def poll(self, channel, num=None):
+    def poll(self, channel):
+        # extend our buffer because polling the sock_thread clears
+        # its own buffer
         self.buffer[channel].extend(self.sockets[channel].poll())
-        i = 0
-        if num is None:
-            while self.buffer[channel]:
-                yield self.buffer[channel].pop(0)
-        else:
-            while i < num:
-                if not self.buffer[channel]:
-                    raise StopIteration()
-                yield self.buffer[channel].pop(0)
-                i += 1
+        while self.buffer[channel]:
+            yield self.buffer[channel].pop(0)
 
-
-import time
-with Client(["A1", "A15"]) as client:
-    time.sleep(1)
-    for data in client.poll("A15", 10):
-        print data
+if __name__ == "__main__":
+    import time
+    with Client(["A1", "A15"]) as client:
+        for i in range(10):
+            time.sleep(1)
+            data = client.poll("A15").next()
+            print data
