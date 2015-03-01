@@ -4,6 +4,7 @@ import errno
 from json import loads
 
 from sock_thread.sock_thread import SockThread
+from client_exceptions import ConnectionFailure, ChannelNotFound
 
 
 class Channel(object):
@@ -34,7 +35,7 @@ class Client(object):
             if error.errno != errno.ECONNREFUSED:
                 raise error
             else:
-                print("Error connecting to {0} on port {1}.".format(server, port))
+                raise ConnectionFailure(server, port)
         data = ""
         while True:
             data += probe.recv(1024)
@@ -63,7 +64,7 @@ class Client(object):
 
                 logging.info("Created channel {0}.".format(channel))
             else:
-                logging.warning("Could not find channel \"{0}\" in manifest.".format(name))
+                raise ChannelNotFound(name)
 
     def disconnect(self):
         for sock_name, sock_thread in self.sockets:
@@ -81,11 +82,3 @@ class Client(object):
         self.buffer[channel].extend(self.sockets[channel].poll())
         while self.buffer[channel]:
             yield self.buffer[channel].pop(0)
-
-if __name__ == "__main__":
-    import time
-    with Client(["A1", "A15"]) as client:
-        for i in range(10):
-            time.sleep(1)
-            data = client.poll("A15").next()
-            print data
