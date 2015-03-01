@@ -49,7 +49,7 @@ class Client(object):
         for channel in available_channels['channels']:
             self.available_names[channel['index']] = channel['sample_rate']
 
-    def connect(self):
+    def connect(self, ignore_missing_channels=True):
         # create sockets
         for name in self.channel_names:
             if name in self.available_names.keys():
@@ -64,7 +64,10 @@ class Client(object):
 
                 logging.info("Created channel {0}.".format(channel))
             else:
-                raise ChannelNotFound(name)
+                if not ignore_missing_channels:
+                    raise ChannelNotFound(name)
+                else:
+                    logging.warning("Could not find channel \"{0}\" in manifest.".format(name))
 
     def disconnect(self):
         for sock_name, sock_thread in self.sockets:
