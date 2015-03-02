@@ -3,7 +3,7 @@ import socket
 import errno
 from json import loads
 
-from sock_thread.sock_thread import SockThread
+from sock_thread import SockThread
 from client_exceptions import ConnectionFailure, ChannelNotFound
 
 
@@ -13,7 +13,7 @@ class Channel(object):
         self.sample_rate = sample_rate
 
     def __str__(self):
-        return "{" + '"index": "{0}", "sample_rate": {1}'.format(self.channel_name, self.sample_rate) + "}\n"
+        return "{" + '"index": "{0}", "sample_rate": {1}'.format(self.channel_name, self.sample_rate) + "}"
 
 
 class Client(object):
@@ -57,12 +57,11 @@ class Client(object):
                 self.channels.append(channel)
 
                 sock_thread = SockThread(channel, (self.server, self.port))
-                sock_thread.setDaemon(True)
                 sock_thread.start()
                 self.sockets[name] = sock_thread
                 self.buffer[name] = []
 
-                logging.info("Created channel {0}.".format(channel))
+                logging.info("Created channel {0}".format(channel))
             else:
                 if not ignore_missing_channels:
                     raise ChannelNotFound(name)
@@ -70,14 +69,8 @@ class Client(object):
                     logging.warning("Could not find channel \"{0}\" in manifest.".format(name))
 
     def disconnect(self):
-        for sock_name, sock_thread in self.sockets:
+        for sock_name, sock_thread in self.sockets.items():
             sock_thread.join()
-
-    def __enter__(self):
-        self.connect()
-
-    def __exit__(self, *args):
-        self.disconnect()
 
     def poll(self, channel):
         # extend our buffer because polling the sock_thread clears

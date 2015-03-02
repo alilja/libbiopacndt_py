@@ -25,10 +25,18 @@ class SockThread(threading.Thread):
             else:
                 raise ConnectionFailure(connection_info[0], connection_info[1])
         self.sock.send(str(channel) + "\n")
+        # ignore manifest
+        while True:
+            data = self.sock.recv(1024)
+            if "\n" in data:
+                break
 
     def run(self):
         while self.alive.isSet():
-            data = unpack_from("!d", self.sock.recv(32))
+            packet = self.sock.recv(32)
+            if len(packet) < 8:
+                continue
+            data = unpack_from("!d", packet)
             self.buffer.append(data[0])
 
     def join(self, timeout=None):
