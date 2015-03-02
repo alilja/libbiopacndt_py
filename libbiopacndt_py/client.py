@@ -8,6 +8,13 @@ from client_exceptions import ConnectionFailure, ChannelNotFound
 
 
 class Channel(object):
+    """ Just a simple datatype that holds channel information and prints it out
+    in a friendly format.
+
+    Args:
+        channel_name: the name on the manifest. Usually known beforehand.
+        sample_rate: if you want to specify a sample rate, do it here, otherwise
+            just let the manifest tell you what it is."""
     def __init__(self, channel_name, sample_rate=20.0):
         self.channel_name = channel_name
         self.sample_rate = sample_rate
@@ -17,6 +24,14 @@ class Channel(object):
 
 
 class Client(object):
+    """ The actual client for talking to the biopac daemon. Creates a threaded socket
+    for each channel you connect to and stores that information in a per-channel buffer.
+
+    Args:
+        channel_names: a list of names of channels that you want to connect to,
+            as they appear in the manifest.
+        server: address of the server you're connecting to.
+        port: port number."""
     def __init__(self, channel_names, server='localhost', port=9999):
         logging.basicConfig(file="biopacndt_py.log", level=logging.INFO)
 
@@ -50,13 +65,19 @@ class Client(object):
             self.available_names[channel['index']] = channel['sample_rate']
 
     def connect(self, ignore_missing_channels=True):
-        # create sockets
+        """Create the sockets and connect to the server.
+
+        Args:
+            ignore_missing_channels (optional): if True, channels not found in
+                the manifest will be noted in the log. If False, missing channels will
+                raise a ChannelNotFound exception."""
         for name in self.channel_names:
             if name in self.available_names.keys():
                 channel = Channel(name, self.available_names[name])
                 self.channels.append(channel)
 
                 sock_thread = SockThread(channel, (self.server, self.port))
+                sock_thread.setDaemon(True)
                 sock_thread.start()
                 self.sockets[name] = sock_thread
                 self.buffer[name] = []
@@ -69,10 +90,20 @@ class Client(object):
                     logging.warning("Could not find channel \"{0}\" in manifest.".format(name))
 
     def disconnect(self):
+        """Disconnect by closing the sockets and merging threads."""
         for sock_name, sock_thread in self.sockets.items():
             sock_thread.join()
 
     def poll(self, channel):
+        """A generator that returns the data out of the buffer, per channel.
+
+        If you want a certain number of items, use:
+
+        for i in range(10):
+            data = client.poll("A1").next()
+
+        Args:
+            channel: the name of the channel as it appears in the manifest."""
         # extend our buffer because polling the sock_thread clears
         # its own buffer
         self.buffer[channel].extend(self.sockets[channel].poll())

@@ -9,6 +9,13 @@ from libbiopacndt_py.client_exceptions import ConnectionFailure
 
 
 class SockThread(threading.Thread):
+    """Subclass of the thread class, specifically designed to fetch information from
+    the biopac daemon. Stores information sock_thread.buffer, which is emptied
+    every time sock_thread.poll() is called.
+
+    Args:
+        channel: the channel to connect to, as it appears in the manifest.
+        connection_info: a tuple containing the server and port to connect on."""
     def __init__(self, channel, connection_info):
         super(SockThread, self).__init__()
         self.buffer = []
@@ -32,6 +39,7 @@ class SockThread(threading.Thread):
                 break
 
     def run(self):
+        """Fetch data from the server and store in the buffer."""
         while self.alive.isSet():
             packet = self.sock.recv(32)
             if len(packet) < 8:
@@ -40,11 +48,14 @@ class SockThread(threading.Thread):
             self.buffer.append(data[0])
 
     def join(self, timeout=None):
+        """Shut down the thread. Close sockets and clear alive status. Not calling this
+        will result in an app that doesn't shut down."""
         self.sock.close()
         self.alive.clear()
         threading.Thread.join(self, timeout)
 
     def poll(self):
+        """Grab all the data in the buffer. Clears the buffer when called."""
         data = self.buffer
         self.buffer = []
         return data

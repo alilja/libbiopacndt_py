@@ -1,4 +1,5 @@
 import time
+import sys
 
 from libbiopacndt_py import Client, ConnectionFailure
 
@@ -8,8 +9,13 @@ except ConnectionFailure as error:
     print "Failed to connect to {0} on port {1}.".format(error.args[0], error.args[1])
 
 client.connect()
-time.sleep(3)
-for i in range(50):
-    data = client.poll("A1").next()
-    print data
+while True:
+    try:
+        try:
+            print client.poll("A1").next()
+        except StopIteration:
+            continue
+    except KeyboardInterrupt:
+        client.disconnect()
+        sys.exit()
 client.disconnect()
