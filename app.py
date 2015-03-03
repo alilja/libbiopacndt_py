@@ -1,7 +1,7 @@
 import time
 import sys
 
-from libbiopacndt_py import Client, ConnectionFailure
+from client import Client, ConnectionFailure
 
 try:
     client = Client(["A1"])

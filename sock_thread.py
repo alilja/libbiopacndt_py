@@ -5,7 +5,7 @@ import errno
 from struct import unpack_from
 import threading
 
-from libbiopacndt_py.client_exceptions import ConnectionFailure
+from client_exceptions import ConnectionFailure
 
 
 class SockThread(threading.Thread):
