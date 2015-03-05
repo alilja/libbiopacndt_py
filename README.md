@@ -22,8 +22,6 @@ You don't have to explicitly call ``disconnect`` -- the destructor will handle t
 
 The client will create `biopacndt_py.log` in the current directory.
 
-* `Client` --
-
 * `connect` -- Connects the client, creating the socket threads. If `ignore_missing_channels` is `True` (default), any channel names that can't be found in the manifest will be ignored and added to the log file. Otherwise, throws a `ChannelNotFound` exception.
 
 * `disconnect` -- Merges threads and closes the sockets.
