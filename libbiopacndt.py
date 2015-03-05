@@ -30,7 +30,6 @@ parser.add_option(
 
 if __name__ == "__main__":
     (options, args) = parser.parse_args()
-
     try:
         client = Client(
             args,
@@ -48,7 +47,7 @@ if __name__ == "__main__":
         try:
             try:
                 output = []
-                for channel in args:
+                for channel in client.sockets:
                     output.append("{0}: {1}".format(channel, round(client.poll(channel).next(), 2)))
                 print "    ".join(output)
             except StopIteration:

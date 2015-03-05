@@ -75,7 +75,7 @@ class Client(object):
             if "\n" in data:
                 break
         probe.close()
-        logging.info(data)
+        logging.info("Manifest:\n%s" % data)
 
         # make a friendlier dict
         available_channels = loads(data)
@@ -91,7 +91,7 @@ class Client(object):
 
     def connect(self):
         if self.channel_names == []:
-            self.channel_names = self.available_names
+            self.channel_names = self.available_names.keys()
 
         """Create the sockets and connect to the server."""
         for name in self.channel_names:
@@ -129,9 +129,9 @@ class Client(object):
             channel: the name of the channel as it appears in the manifest."""
         # extend our buffer because polling the sock_thread clears
         # its own buffer
-        if channel not in self.sockets:
+        if channel not in self.sockets.keys():
             self._handle_missing_channel(channel)
-            yield
+            yield None
         else:
             self.buffer[channel].extend(self.sockets[channel].poll())
             while self.buffer[channel]:
