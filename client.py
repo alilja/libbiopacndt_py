@@ -49,7 +49,7 @@ class Client(object):
     ):
         log_level = logging.ERROR
         if verbose:
-            log_level = logging.WARNING
+            log_level = logging.INFO
         logging.basicConfig(level=log_level)
 
         self.server = server
@@ -75,6 +75,7 @@ class Client(object):
             if "\n" in data:
                 break
         probe.close()
+        logging.info(data)
 
         # make a friendlier dict
         available_channels = loads(data)

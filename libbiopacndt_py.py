@@ -27,9 +27,10 @@ parser.add_option(
     type="int",
     help="The port number of the Biopac daemon."
 )
+
 if __name__ == "__main__":
     (options, args) = parser.parse_args()
-    print options.ignore
+
     try:
         client = Client(
             args,
@@ -46,8 +47,10 @@ if __name__ == "__main__":
     while True:
         try:
             try:
+                output = []
                 for channel in args:
-                    print(channel, client.poll(channel).next())
+                    output.append("{0}: {1}".format(channel, round(client.poll(channel).next(), 2)))
+                print "    ".join(output)
             except StopIteration:
                 continue
         except KeyboardInterrupt:
