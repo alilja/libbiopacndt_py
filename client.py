@@ -89,6 +89,9 @@ class Client(object):
             logging.warning("Could not find channel \"{0}\" in manifest.".format(channel))
 
     def connect(self):
+        if self.channel_names == []:
+            self.channel_names = self.available_names
+
         """Create the sockets and connect to the server."""
         for name in self.channel_names:
             if name in self.available_names.keys():
