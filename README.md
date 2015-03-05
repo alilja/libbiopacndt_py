@@ -18,7 +18,7 @@ client = Client(["A1"], server='localhost', port=9999)
 client.connect()
 ```
 
-It's important to call ``disconnect`` in order to merge the threads and close sockets down. I guess you don't *have* to do it, but it's good practice.
+You don't have to explicitly call ``disconnect`` -- the destructor will handle that for you.
 
 The client will create `biopacndt_py.log` in the current directory.
 
@@ -44,6 +44,11 @@ Examples for a continuous stream of data can be found in ``app.py``.
 
 Changes
 -------
+### v1.0.1
+
+* ``disconnect`` added to ``__del__``
+* Created ``libbiopacndt_py.py`` as a CLI
+
 ### v1.0
 
 * Initial version.
